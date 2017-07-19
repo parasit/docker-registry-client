@@ -72,14 +72,18 @@ func (registry *Registry) ManifestV2(repository, reference string) (*manifestV2.
 func (registry *Registry) ManifestDigest(repository, reference string) (digest.Digest, error) {
 	url := registry.url("/v2/%s/manifests/%s", repository, reference)
 	registry.Logf("registry.manifest.head url=%s repository=%s reference=%s", url, repository, reference)
+	req, err := http.NewRequest("HEAD", url, nil)
 
-	resp, err := registry.Client.Head(url)
-	if resp != nil {
-		defer resp.Body.Close()
-	}
 	if err != nil {
-		return "", err
+		registry.Logf("Error ", url, repository)
 	}
+
+	req.Header.Set("Accept", manifestV2.MediaTypeManifest)
+	resp, err := registry.Client.Do(req)
+	if err != nil {
+		registry.Logf("Error ", url, repository)
+	}
+
 	return digest.ParseDigest(resp.Header.Get("Docker-Content-Digest"))
 }
 
